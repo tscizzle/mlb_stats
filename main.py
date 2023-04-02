@@ -5,30 +5,39 @@ from bs4 import BeautifulSoup
 ## Constants.
 
 
-url_root = "https://www.baseball-reference.com"
+URL_ROOT = "https://www.baseball-reference.com"
+BOLD_START = "\033[1m"
+BOLD_END = "\033[0m"
 
 
 ## Main.
 
 
 def main():
-    stats_1st_inning = get_1st_inning_stats_for_pitcher("Shohei", "Ohtani")
+    first_name = "Shohei"
+    last_name = "Ohtani"
+    year = 2022
+
+    stats_1st_inning = get_1st_inning_stats_for_pitcher(first_name, last_name, year)
 
     if stats_1st_inning is None:
         return
 
     era_1st_inning = float(stats_1st_inning["earned_run_avg"])
 
-    print(era_1st_inning)
+    print(
+        f"\n1st inning ERA for {BOLD_START}{first_name} {last_name}{BOLD_END} ({year}):"
+        f" {BOLD_START}{era_1st_inning}{BOLD_END}\n"
+    )
 
 
 ## Helpers.
 
 
-def get_1st_inning_stats_for_pitcher(first_name, last_name, year=2022):
+def get_1st_inning_stats_for_pitcher(first_name, last_name, year):
     player_page_id = f"{last_name.lower()[:5]}{first_name.lower()[:2]}01"
     player_page_url = (
-        f"{url_root}/players/split.fcgi?id={player_page_id}&year={year}&t=p"
+        f"{URL_ROOT}/players/split.fcgi?id={player_page_id}&year={year}&t=p"
     )
     fetch_res = requests.get(player_page_url)
     if fetch_res.status_code != 200:
