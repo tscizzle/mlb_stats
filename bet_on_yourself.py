@@ -20,23 +20,29 @@ def main():
     matchups = get_todays_matchups()
     print(f"\n\t{len(matchups)} matchups\n")
 
-    team_batting_1st_inning_era = get_1st_inning_era_for_batting_teams(LAST_YEAR)
+    team_batting_1st_inning_runs_per_inning = (
+        get_1st_inning_runs_per_inning_for_batting_teams(LAST_YEAR)
+    )
 
     for matchup_idx, matchup in enumerate(matchups):
         team_abbrev = matchup["team_abbrev"]
         pitcher_player_id = matchup["pitcher_player_id"]
         pitcher_name = matchup["pitcher_name"]
 
-        team_batting_era = team_batting_1st_inning_era[team_abbrev]
-        pitcher_era = get_1st_inning_era_for_pitcher(pitcher_player_id, LAST_YEAR)
+        team_batting_runs_per_inning = team_batting_1st_inning_runs_per_inning[
+            team_abbrev
+        ]
+        pitcher_runs_per_inning = get_1st_inning_runs_per_inning_for_pitcher(
+            pitcher_player_id, LAST_YEAR
+        )
 
         print(
             f"\t{matchup_idx + 1}."
             f" {team_abbrev} batting"
-            f" ({BOLD_START}{round(team_batting_era, 2)}{BOLD_END} ERA)"
+            f" ({BOLD_START}{display_number(team_batting_runs_per_inning)}{BOLD_END} runs per inning)"
             f" vs."
             f" {pitcher_name} pitching"
-            f" ({BOLD_START}{pitcher_era}{BOLD_END} ERA)"
+            f" ({BOLD_START}{display_number(pitcher_runs_per_inning)}{BOLD_END} runs per inning)"
         )
 
     print("\nPress Enter to exit...")
@@ -64,6 +70,13 @@ def rate_limited_get(*args, **kwargs):
     last_get = time.time()
 
     return results
+
+
+def display_number(x):
+    if x is None:
+        return "N/A"
+    else:
+        return "{:.2f}".format(x)
 
 
 def get_todays_matchups():
@@ -112,7 +125,7 @@ def get_todays_matchups():
     return todays_matchups
 
 
-def get_1st_inning_era_for_batting_teams(year):
+def get_1st_inning_runs_per_inning_for_batting_teams(year):
     all_teams_url = (
         f"{URL_ROOT}/tools/split_stats_lg.cgi"
         f"?full=1&params=innng|1st inning|ML|{year}|bat|AB|"
@@ -136,7 +149,7 @@ def get_1st_inning_era_for_batting_teams(year):
     return team_1st_inning_runs
 
 
-def get_1st_inning_era_for_pitcher(player_id, year):
+def get_1st_inning_runs_per_inning_for_pitcher(player_id, year):
     player_page_url = f"{URL_ROOT}/players/split.fcgi?id={player_id}&year={year}&t=p"
     fetch_res = rate_limited_get(player_page_url)
     if fetch_res.status_code != 200:
@@ -150,12 +163,10 @@ def get_1st_inning_era_for_pitcher(player_id, year):
     for tr in by_inning_table.find_all("tr"):
         th = tr.find("th")
         if th is not None and th.get_text() == "1st inning":
-            for td in tr.find_all(
-                "td",
-            ):
-                if td.get("data-stat") == "earned_run_avg":
-                    era = float(td.get_text())
-                    return era
+            runs = int(tr.find_all("td", {"data-stat": "R"})[0].get_text())
+            games = int(tr.find_all("td", {"data-stat": "G"})[0].get_text())
+            if games > 0:
+                return runs / games
 
 
 if __name__ == "__main__":
