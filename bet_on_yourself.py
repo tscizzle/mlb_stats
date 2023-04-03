@@ -38,7 +38,10 @@ def main():
             f" {pitcher_name} pitching"
             f" ({BOLD_START}{pitcher_era}{BOLD_END} ERA)"
         )
-    print()
+
+    print("\nPress Enter to exit...")
+
+    input()
 
 
 ## Helpers.
